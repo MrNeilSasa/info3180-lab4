@@ -5,6 +5,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.utils import secure_filename
 from app.models import UserProfile
 from app.forms import LoginForm
+from app.forms import UploadForm
 from werkzeug.security import check_password_hash
 
 
@@ -25,17 +26,25 @@ def about():
 
 
 @app.route('/upload', methods=['POST', 'GET'])
+@login_required
 def upload():
+    app.config['UPLOAD_FOLDER'] = "./uploads"
+    
     # Instantiate your form class
-
+    form = UploadForm()
     # Validate file upload on submit
-    if form.validate_on_submit():
-        # Get file data and save to your uploads folder
+    if request.method == 'POST':    
+        if form.validate_on_submit():
+            # Get file data and save to your uploads folder
+            filename = secure_filename(form.file.data.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            form.file.data.save(file_path)
 
-        flash('File Saved', 'success')
-        return redirect(url_for('home')) # Update this to redirect the user to a route that displays all uploaded image files
+            flash('File Saved', 'success')
+            return redirect(url_for('upload')) # Update this to redirect the user to a route that displays all uploaded image files
 
-    return render_template('upload.html')
+    return render_template('upload.html', form=form)
+
 
 
 @app.route('/login', methods=['POST', 'GET'])
@@ -54,7 +63,7 @@ def login():
         # Then store the result of that query to a `user` variable so it can be
         # passed to the login_user() method below.
 
-        user = db.session.execute(db.select(UserProfile).filter_by(username=username)).scalar
+        user = db.session.execute(db.select(UserProfile).filter_by(username=username)).scalar()
 
         if user is not None and check_password_hash(user.password, password):
 
@@ -65,8 +74,10 @@ def login():
             # Remember to flash a message to the user
             flash('Logged in successfully.', 'success')
             return redirect(url_for("upload"))  # The user should be redirected to the upload form instead
-    
-        return render_template("login.html", form=form)
+        else:
+            flash('Username or Password is incorrect.', 'danger')
+    flash_errors(form) 
+    return render_template("login.html", form=form)
 
 # user_loader callback. This callback is used to reload the user object from
 # the user ID stored in the session
