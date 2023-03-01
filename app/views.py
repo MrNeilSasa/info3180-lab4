@@ -13,6 +13,8 @@ from werkzeug.security import check_password_hash
 # Routing for your application.
 ###
 
+UPLOADS_FOLDER = os.path.join(os.getcwd(), 'uploads')
+
 @app.route('/')
 def home():
     """Render website's home page."""
@@ -79,15 +81,21 @@ def login():
     flash_errors(form) 
     return render_template("login.html", form=form)
 
-@app.route('/upload/<filename>')
+
+
+@app.route('/uploads/<filename>')
 def get_image(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    rootdir = os.getcwd()
+    return send_from_directory(os.path.join(rootdir, 'uploads'), filename)
+
 
 @app.route('/files/')
+@login_required
 def files():
     uploaded_images = get_uploaded_images()
 
     return render_template('files.html',uploaded_images=uploaded_images)
+
 
 
 # user_loader callback. This callback is used to reload the user object from
@@ -106,7 +114,6 @@ def get_uploaded_images():
         for file in files:
             uploaded_images.append(file)
     return uploaded_images
-
 ###
 # The functions below should be applicable to all Flask apps.
 ###
