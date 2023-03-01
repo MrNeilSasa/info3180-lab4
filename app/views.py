@@ -81,7 +81,12 @@ def login():
     flash_errors(form) 
     return render_template("login.html", form=form)
 
-
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.')
+    return redirect(url_for('home'))
 
 @app.route('/uploads/<filename>')
 def get_image(filename):
